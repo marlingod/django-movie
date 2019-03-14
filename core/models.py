@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
-
+from django.db.models.aggregates import (
+    Sum
+)
 
 class PersonManager(models.Manager):
     def all_with_prefetch_movies(self):
@@ -47,6 +49,22 @@ class MovieManager(models.Manager):
             'director')
         qs = qs.prefetch_related(
             'writers', 'actors')
+        return qs
+
+    def all_with_related_persons_and_score(self):
+        qs = self.all_with_related_persons()
+        qs = qs.annotate(score=Sum('vote__value'))
+        return qs
+
+    def top_movies(self):
+        qs = self.get_queryset()
+        qs = qs.annotate(
+                vote_sum=Sum(
+                    'vote__value'))
+        qs = qs.exclude(
+            vote_sum=None)
+        qs = qs.order_by(
+            '-vote_sum')
         return qs
 
 
